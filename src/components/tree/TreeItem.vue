@@ -133,32 +133,38 @@
         });
       },
       addChild: function () {
-        let child = {
-          id: 0,
-          name: '新的节点',
-          parentId: this.model.id,
-          isParent: false,
-          sort:this.model.children? this.model.children.length + 1:1
-        }
-        if (!this.model.isParent) {
-          Vue.set(this.model, 'children', [child]);
-          this.model.isParent = true;
-          this.open = true;
-          this.handleAdd(child);
-        } else {
-          if (!this.isFolder) {
-            this.$http.get(this.url, {params: {pid: this.model.id}}).then(resp => {
-              Vue.set(this.model, 'children', resp.data);
-              this.model.children.push(child);
+        this.$http.get(this.url,{params: {pid:-1}}).then(resp => {
+          let child = {
+            id: resp.data[0].id+1,
+            name: '新的节点',
+            parentId: this.model.id,
+            isParent: false,
+            sort:this.model.children? this.model.children.length + 1:1
+          };
+          if (this.isSelected) {
+            if (!this.model.isParent) {
+              Vue.set(this.model, 'children', [child]);
+              this.model.isParent = true;
               this.open = true;
               this.handleAdd(child);
-            });
-          } else {
-            this.model.children.push(child);
-            this.open = true;
-            this.handleAdd(child);
+            } else {
+              if (!this.isFolder) {
+                this.$http.get(this.url, {params: {pid: this.model.id}}).then(resp => {
+                  Vue.set(this.model, 'children', resp.data);
+                  this.model.children.push(child);
+                  this.open = true;
+                  this.handleAdd(child);
+                });
+              } else {
+                this.model.children.push(child);
+                this.open = true;
+                this.handleAdd(child);
+              }
+            }
+          }else {
+            this.$message.error("选中后再操作！");
           }
-        }
+        });
       },
       deleteChild: function () {
         this.$message.confirm('此操作将永久删除数据，是否继续?', '提示', {
@@ -177,7 +183,7 @@
         this.$nextTick(() => this.$refs[this.model.id].focus());
       },
       afterEdit() {
-        if (this.model.beginEdit) {
+        if (this.beginEdit) {
           this.beginEdit = false;
           this.handleEdit(this.model.id, this.model.name);
         }
